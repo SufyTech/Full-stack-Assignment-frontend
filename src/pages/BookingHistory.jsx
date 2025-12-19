@@ -1,23 +1,23 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useBooking } from "../context/BookingContext";
 
-// Use your live backend URL
+// Live backend URL
 const BASE_URL = "https://court-backend-5ifj.onrender.com";
 
 const BookingHistory = () => {
-  const { booking } = useBooking();
-  const userName = booking.userName;
+  // Get username from localStorage
+  const [userName] = useState(localStorage.getItem("userName") || "");
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Conversion function INR -> USD
+  // Convert INR -> USD
   const convertToUSD = (inrAmount) => {
-    const exchangeRate = 0.012; // 1 INR ≈ 0.012 USD (update if needed)
+    const exchangeRate = 0.012;
     return (inrAmount * exchangeRate).toFixed(2);
   };
 
+  // Fetch booking history
   const fetchBookings = async () => {
     try {
       setLoading(true);
@@ -35,9 +35,7 @@ const BookingHistory = () => {
   };
 
   useEffect(() => {
-    if (userName) {
-      fetchBookings();
-    }
+    if (userName) fetchBookings();
   }, [userName]);
 
   if (loading) {
@@ -52,6 +50,14 @@ const BookingHistory = () => {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
         {error}
+      </div>
+    );
+  }
+
+  if (!userName) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        No user found. Please enter your name in Booking Page.
       </div>
     );
   }
@@ -96,16 +102,18 @@ const BookingHistory = () => {
                 {/* Court / Equipment / Coach */}
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>
-                    <strong>Court:</strong> {b.courtName || "Unknown"}
+                    <strong>Court:</strong> {b.courtId?.name || "Unknown"}
                   </p>
                   {b.status === "confirmed" && (
                     <>
                       <p>
                         <strong>Equipment:</strong>{" "}
-                        {b.equipment?.length ? b.equipment.join(", ") : "None"}
+                        {b.equipmentIds?.length
+                          ? b.equipmentIds.map((eq) => eq.name).join(", ")
+                          : "None"}
                       </p>
                       <p>
-                        <strong>Coach:</strong> {b.coach || "None"}
+                        <strong>Coach:</strong> {b.coachId?.name || "None"}
                       </p>
                     </>
                   )}
@@ -122,7 +130,7 @@ const BookingHistory = () => {
                       : ""}
                   </p>
 
-                  {/* Confirmed booking cancel button */}
+                  {/* Cancel button */}
                   {b.status === "confirmed" && (
                     <button
                       onClick={async () => {
