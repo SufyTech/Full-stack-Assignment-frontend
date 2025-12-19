@@ -1,70 +1,100 @@
-# Getting Started with Create React App
+# CourtBook - Sports Court Booking Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+CourtBook is a web application that allows users to book badminton courts, optional equipment, and coaches with real-time availability. It supports dynamic pricing, admin management, and waitlist handling, making it easy to manage sports facility bookings efficiently.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- Multi-resource booking (court + equipment + coach)
+- Dynamic pricing based on peak hours, weekends, and indoor courts
+- Admin panel to manage courts, equipment, coaches, and pricing rules
+- Booking history and live price updates
+- Waitlist handling for fully booked slots
 
-### `npm start`
+## Setup Instructions
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Backend
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. Navigate to the backend folder:
 
-### `npm test`
+```bash
+cd backend
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. Install dependencies:
 
-### `npm run build`
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. Start the server:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Backend runs on `http://localhost:5000` (or your chosen port).
 
-### `npm run eject`
+4. Seed the database:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+node seed.js
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+This populates the database with:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- Courts
+- Equipment
+- Coaches
+- Pricing rules
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Frontend
 
-## Learn More
+1. Navigate to the frontend folder:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+cd frontend
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+2. Install dependencies:
 
-### Code Splitting
+```bash
+npm install
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+3. Start the frontend:
 
-### Analyzing the Bundle Size
+```bash
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-### Making a Progressive Web App
+## Assumptions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- Booking duration is 1 hour per slot
+- Prices are calculated per hour
+- Equipment and coach availability are checked in real-time
+- If a slot is full, users are added to a waitlist
+- Pricing rules are configurable and stackable
 
-### Advanced Configuration
+## Database Design and Pricing Engine
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The CourtBook platform is designed to manage courts, equipment, coaches, bookings, and pricing rules efficiently. The core database entities include:
 
-### Deployment
+- **Court**: Stores attributes like name, type (indoor/outdoor), and active status.
+- **Equipment**: Stores name, total quantity, price per hour, and booked slots.
+- **Coach**: Includes hourly rate, active status, and booked slots for each date and time.
+- **Booking**: References courts, equipment, and coaches via ObjectIds, ensuring atomic bookings — all selected resources are reserved together, or the booking fails.
+- **Waitlist**: Maintained per court, date, and slot to handle full bookings and promote the next user when a slot opens.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+This schema ensures efficient availability checks. When a user attempts a booking, the system validates the court, equipment, and coach availability. Equipment and coach schedules are updated immediately upon confirmation to prevent double bookings.
 
-### `npm run build` fails to minify
+The pricing engine is dynamic and configurable. Each court has a base price depending on its type: indoor courts carry a premium, while outdoor courts are lower. Additional costs from selected equipment and coaches are added to this base. Configurable rules, such as peak hour surcharges (6–9 PM), weekend multipliers, and indoor court premiums, are stored in the database. Each rule contains conditions and multipliers applied sequentially to calculate the total price. Administrators can adjust rates, enable/disable rules, or add new rules without changing backend code.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+By separating booking logic from pricing logic, CourtBook ensures modularity, maintainability, and flexibility. Queries are optimized to handle multiple resource types, and the waitlist system ensures smooth user experience even when slots are fully booked. Combining atomic booking, dynamic pricing, and configurable rules, CourtBook provides a reliable and scalable solution for sports facility management.
+
+## Tech Stack
+
+- **Backend**: Node.js, Express, MongoDB
+- **Frontend**: React.js
+- **Other**: Axios, Mongoose
