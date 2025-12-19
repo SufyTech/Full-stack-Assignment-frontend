@@ -89,9 +89,10 @@ const AdminPanel = () => {
                   text={`${court.name || "Unknown Court"} (${
                     court.type || "-"
                   })`}
-                  sub={`Base Price: ₹${
-                    court.basePrice || (court.type === "indoor" ? 500 : 300)
+                  sub={`Base Price: $${
+                    court.basePrice || (court.type === "indoor" ? 6 : 4)
                   }`}
+                  // Example conversion: ₹500 ≈ $6, ₹300 ≈ $4
                 />
               ))
             )}
@@ -106,9 +107,10 @@ const AdminPanel = () => {
                 <Item
                   key={eq._id}
                   text={eq.name || "Unknown Equipment"}
-                  sub={`Qty: ${eq.availableQuantity || 0} | ₹${
+                  sub={`Qty: ${eq.availableQuantity || 0} | $${
                     eq.pricePerHour || 0
                   }/hr`}
+                  // Convert rupees to dollars as needed
                 />
               ))
             )}
@@ -123,7 +125,8 @@ const AdminPanel = () => {
                 <Item
                   key={coach._id}
                   text={coach.name || "Unknown Coach"}
-                  sub={`Fee: ₹${coach.hourlyRate || 0}/hr`}
+                  sub={`Fee: $${coach.hourlyRate || 0}/hr`}
+                  // Convert rupees to dollars
                 />
               ))
             )}
