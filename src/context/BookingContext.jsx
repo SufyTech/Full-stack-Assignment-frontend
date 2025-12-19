@@ -1,19 +1,34 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const BookingContext = createContext();
 
-export const useBooking = () => useContext(BookingContext);
-
 export const BookingProvider = ({ children }) => {
   const [booking, setBooking] = useState({
-    date: "",
-    slot: "",
-    selectedCourt: null,
-    selectedEquipment: [],
-    selectedCoach: null,
-    price: 0,
-    waitlist: false,
+    userName: "",
+    courtId: null,
+    date: null,
+    slot: null,
+    equipmentIds: [],
+    coachId: null,
   });
+
+  // 🔐 Load userName from localStorage on page refresh
+  useEffect(() => {
+    const savedUser = localStorage.getItem("userName");
+    if (savedUser) {
+      setBooking((prev) => ({
+        ...prev,
+        userName: savedUser,
+      }));
+    }
+  }, []);
+
+  // 💾 Save userName whenever it changes
+  useEffect(() => {
+    if (booking.userName) {
+      localStorage.setItem("userName", booking.userName);
+    }
+  }, [booking.userName]);
 
   return (
     <BookingContext.Provider value={{ booking, setBooking }}>
@@ -21,3 +36,5 @@ export const BookingProvider = ({ children }) => {
     </BookingContext.Provider>
   );
 };
+
+export const useBooking = () => useContext(BookingContext);

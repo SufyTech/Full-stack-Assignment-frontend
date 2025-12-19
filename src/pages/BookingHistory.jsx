@@ -1,76 +1,156 @@
 import { useEffect, useState } from "react";
-import { useBooking } from "../context/BookingContext";
 import axios from "axios";
+import { useBooking } from "../context/BookingContext";
 
-const BookingHistory = ({ userId }) => {
+// Use your live backend URL
+const BASE_URL = "https://court-backend-5ifj.onrender.com";
+
+const BookingHistory = () => {
+  const { booking } = useBooking();
+  const userName = booking.userName;
   const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Conversion function INR -> USD
+  const convertToUSD = (inrAmount) => {
+    const exchangeRate = 0.012; // 1 INR ≈ 0.012 USD (update if needed)
+    return (inrAmount * exchangeRate).toFixed(2);
+  };
+
+  const fetchBookings = async () => {
+    if (!userName) {
+      setError("No userName provided");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const res = await axios.get(`${BASE_URL}/api/bookings/history`, {
+        params: { userName },
+      });
+      setBookings(res.data);
+    } catch (err) {
+      console.error("Booking history error:", err.response || err);
+      setError("Failed to fetch bookings");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        const res = await axios.get(
-          `http://localhost:5000/api/bookings/history`,
-          {
-            params: { userId },
-          }
-        );
-        setBookings(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
     fetchBookings();
-  }, [userId]);
+  }, [userName]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-500">
+        Loading booking history...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
-          Booking History
+    <div className="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-6">
+      <div className="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center text-blue-600">
+          My Bookings
         </h1>
 
         {bookings.length === 0 ? (
-          <p className="text-center text-gray-500">No bookings yet.</p>
+          <p className="text-center text-gray-500">No bookings found.</p>
         ) : (
-          <div className="grid gap-4">
+          <div className="space-y-4">
             {bookings.map((b) => (
               <div
                 key={b._id}
-                className="p-4 border rounded-lg hover:shadow-lg transition-all bg-gray-50"
+                className="p-4 sm:p-5 border rounded-xl bg-gray-50 hover:shadow-md transition"
               >
-                <p>
-                  <strong>Date:</strong> {b.date}
-                </p>
-                <p>
-                  <strong>Slot:</strong> {b.slot}
-                </p>
-                <p>
-                  <strong>Court:</strong> {b.courtName}
-                </p>
-                <p>
-                  <strong>Equipment:</strong>{" "}
-                  {b.equipment?.length ? b.equipment.join(", ") : "None"}
-                </p>
-                <p>
-                  <strong>Coach:</strong> {b.coach || "None"}
-                </p>
-                <p>
-                  <strong>Status:</strong>{" "}
+                {/* Booking Date & Slot */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
+                  <div>
+                    <p className="font-semibold text-gray-800">
+                      {new Date(b.date).toDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500">Slot: {b.slot}</p>
+                  </div>
                   <span
-                    className={`font-semibold ${
+                    className={`w-fit px-3 py-1 rounded-full text-xs font-bold ${
                       b.status === "cancelled"
-                        ? "text-red-600"
-                        : b.status === "waitlist"
-                        ? "text-yellow-600"
-                        : "text-green-600"
+                        ? "bg-red-100 text-red-600"
+                        : b.status === "waitlisted"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-green-100 text-green-700"
                     }`}
                   >
-                    {b.status}
+                    {b.status.toUpperCase()}
                   </span>
-                </p>
-                <p>
-                  <strong>Total Price:</strong> ${b.price.toFixed(2)}
-                </p>
+                </div>
+
+                {/* Court / Equipment / Coach */}
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>
+                    <strong>Court:</strong> {b.courtName || "Unknown"}
+                  </p>
+                  {b.status === "confirmed" && (
+                    <>
+                      <p>
+                        <strong>Equipment:</strong>{" "}
+                        {b.equipment?.length ? b.equipment.join(", ") : "None"}
+                      </p>
+                      <p>
+                        <strong>Coach:</strong> {b.coach || "None"}
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Price / Actions */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
+                  {/* Price */}
+                  <p className="font-bold text-gray-800">
+                    {b.status === "confirmed"
+                      ? `$${convertToUSD(b.totalPrice)}`
+                      : b.status === "waitlisted"
+                      ? "$0.00"
+                      : ""}
+                  </p>
+
+                  {/* Confirmed booking cancel button */}
+                  {b.status === "confirmed" && (
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm("Cancel this booking?")) return;
+                        try {
+                          await axios.patch(
+                            `${BASE_URL}/api/bookings/${b._id}/cancel`
+                          );
+                          fetchBookings();
+                        } catch {
+                          alert("Failed to cancel booking");
+                        }
+                      }}
+                      className="w-full sm:w-auto text-sm px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      Cancel
+                    </button>
+                  )}
+
+                  {/* Waitlisted message */}
+                  {b.status === "waitlisted" && (
+                    <p className="text-yellow-700 text-sm font-medium">
+                      Court already booked. You are in waitlist.
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>

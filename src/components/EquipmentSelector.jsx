@@ -1,42 +1,36 @@
+// src/components/EquipmentSelector.jsx
 import { useBooking } from "../context/BookingContext";
 
 const equipmentList = [
-  { id: "racket", name: "Racket", price: 5 },
-  { id: "shoes", name: "Shoes", price: 3 },
+  { id: "694478f6a532961fcd0ffcc5", name: "Racket", price: 5 },
+  { id: "694478f6a532961fcd0ffcc6", name: "Shoes", price: 3 },
 ];
 
 const EquipmentSelector = () => {
   const { booking, setBooking } = useBooking();
 
-  const toggleEquipment = (eq) => {
-    const exists = booking.selectedEquipment.find((e) => e.id === eq.id);
-    if (exists) {
-      setBooking({
-        ...booking,
-        selectedEquipment: booking.selectedEquipment.filter(
-          (e) => e.id !== eq.id
-        ),
-      });
+  const toggleEquipment = (id) => {
+    let updated = booking.equipmentIds || [];
+    if (updated.includes(id)) {
+      updated = updated.filter((e) => e !== id);
     } else {
-      setBooking({
-        ...booking,
-        selectedEquipment: [...booking.selectedEquipment, eq],
-      });
+      updated.push(id);
     }
+    setBooking({ ...booking, equipmentIds: updated });
   };
 
   return (
-    <div className="mb-4">
-      <h2 className="font-bold mb-2 text-lg">Select Equipment</h2>
-      <div className="flex gap-2">
+    <div>
+      <label className="font-semibold mb-2 block">Select Equipment</label>
+      <div className="flex flex-wrap gap-2">
         {equipmentList.map((eq) => (
           <button
             key={eq.id}
-            onClick={() => toggleEquipment(eq)}
-            className={`px-4 py-2 border rounded-full transition-all ${
-              booking.selectedEquipment.find((e) => e.id === eq.id)
-                ? "bg-green-500 text-white"
-                : "bg-white hover:bg-gray-100"
+            onClick={() => toggleEquipment(eq.id)}
+            className={`px-3 py-1 rounded-lg border ${
+              booking.equipmentIds?.includes(eq.id)
+                ? "bg-blue-600 text-white"
+                : "border-gray-300"
             }`}
           >
             {eq.name} (${eq.price})

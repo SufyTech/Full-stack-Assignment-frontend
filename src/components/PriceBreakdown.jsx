@@ -1,42 +1,70 @@
-import { useEffect } from "react";
+// src/components/PriceBreakdown.jsx
 import { useBooking } from "../context/BookingContext";
+import { useEffect, useState } from "react";
+
+const peakHours = ["18:00", "19:00", "20:00"];
+const weekendMultiplier = 1.2;
+const peakMultiplier = 1.5;
+const indoorMultiplier = 1.2;
+
+const equipmentList = [
+  { id: "694478f6a532961fcd0ffcc5", name: "Racket", price: 5 },
+  { id: "694478f6a532961fcd0ffcc6", name: "Shoes", price: 3 },
+];
+
+const coaches = [
+  { id: null, name: "No Coach", price: 0 },
+  { id: "694479f9a532961fcd0ffcd6", name: "Coach John", price: 10 },
+  { id: "694479f9a532961fcd0ffcd7", name: "Coach Sarah", price: 12 },
+  { id: "694479f9a532961fcd0ffcd8", name: "Coach Mike", price: 8 },
+];
 
 const PriceBreakdown = () => {
-  const { booking, setBooking } = useBooking();
+  const { booking } = useBooking();
+  const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    if (!booking.selectedCourt) return;
+    if (!booking.courtId || !booking.slot || !booking.date) {
+      setTotalPrice(0);
+      return;
+    }
 
-    let price = booking.selectedCourt.basePrice;
+    let basePrice = booking.courtName?.includes("Indoor") ? 500 : 300;
 
-    booking.selectedEquipment.forEach((eq) => {
-      price += eq.price;
-    });
+    // Determine peak hours
+    let multiplier = 1;
+    if (peakHours.includes(booking.slot)) multiplier *= peakMultiplier;
 
-    if (booking.selectedCoach) price += booking.selectedCoach.fee;
+    // Check weekend
+    const day = new Date(booking.date).getDay(); // 0 = Sunday, 6 = Saturday
+    if (day === 0 || day === 6) multiplier *= weekendMultiplier;
 
-    const hour = parseInt(booking.slot.split(":")[0]);
-    const day = new Date(booking.date).getDay();
+    // Indoor premium
+    if (booking.courtName?.includes("Indoor")) multiplier *= indoorMultiplier;
 
-    if (hour >= 18 && hour <= 21) price *= 1.2; // peak
-    if (day === 0 || day === 6) price *= 1.1; // weekend
-    if (booking.selectedCourt.type === "indoor") price *= 1.1; // indoor
+    let price = basePrice * multiplier;
 
-    setBooking((prev) => ({ ...prev, price }));
-  }, [
-    booking.selectedCourt,
-    booking.selectedEquipment,
-    booking.selectedCoach,
-    booking.slot,
-    booking.date,
-  ]);
+    // Add equipment prices
+    if (booking.equipmentIds?.length > 0) {
+      for (let id of booking.equipmentIds) {
+        const eq = equipmentList.find((e) => e.id === id);
+        if (eq) price += eq.price;
+      }
+    }
+
+    // Add coach price
+    if (booking.coachId) {
+      const coach = coaches.find((c) => c.id === booking.coachId);
+      if (coach) price += coach.price;
+    }
+
+    setTotalPrice(price);
+  }, [booking]);
 
   return (
-    <div className="p-4 border rounded-lg bg-gray-50 mb-4">
-      <h2 className="font-bold mb-2 text-lg">Price Breakdown</h2>
-      <p className="text-xl font-semibold">
-        Total: ${booking.price.toFixed(2)}
-      </p>
+    <div className="p-4 border rounded-lg bg-gray-50">
+      <h3 className="font-semibold mb-2">Price Breakdown</h3>
+      <p>Total: ${totalPrice.toFixed(2)}</p>
     </div>
   );
 };
