@@ -1,24 +1,29 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-// Live backend URL
+// Use your live backend URL
 const BASE_URL = "https://court-backend-5ifj.onrender.com";
 
 const BookingHistory = () => {
-  // Get username from localStorage
-  const [userName] = useState(localStorage.getItem("userName") || "");
+  // Get username from localStorage (persisted after booking)
+  const userName = localStorage.getItem("userName");
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Convert INR -> USD
+  // Conversion function INR -> USD
   const convertToUSD = (inrAmount) => {
-    const exchangeRate = 0.012;
+    const exchangeRate = 0.012; // 1 INR ≈ 0.012 USD
     return (inrAmount * exchangeRate).toFixed(2);
   };
 
-  // Fetch booking history
   const fetchBookings = async () => {
+    if (!userName) {
+      setError("No username found. Please book a court first.");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await axios.get(`${BASE_URL}/api/bookings/history`, {
@@ -35,8 +40,8 @@ const BookingHistory = () => {
   };
 
   useEffect(() => {
-    if (userName) fetchBookings();
-  }, [userName]);
+    fetchBookings();
+  }, []);
 
   if (loading) {
     return (
@@ -50,14 +55,6 @@ const BookingHistory = () => {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
         {error}
-      </div>
-    );
-  }
-
-  if (!userName) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-500">
-        No user found. Please enter your name in Booking Page.
       </div>
     );
   }
@@ -102,26 +99,19 @@ const BookingHistory = () => {
                 {/* Court / Equipment / Coach */}
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>
-                    <strong>Court:</strong> {b.courtId?.name || "Unknown"}
+                    <strong>Court:</strong> {b.courtName || "Unknown"}
                   </p>
-                  {b.status === "confirmed" && (
-                    <>
-                      <p>
-                        <strong>Equipment:</strong>{" "}
-                        {b.equipmentIds?.length
-                          ? b.equipmentIds.map((eq) => eq.name).join(", ")
-                          : "None"}
-                      </p>
-                      <p>
-                        <strong>Coach:</strong> {b.coachId?.name || "None"}
-                      </p>
-                    </>
-                  )}
+                  <p>
+                    <strong>Equipment:</strong>{" "}
+                    {b.equipment.length > 0 ? b.equipment.join(", ") : "None"}
+                  </p>
+                  <p>
+                    <strong>Coach:</strong> {b.coach || "None"}
+                  </p>
                 </div>
 
                 {/* Price / Actions */}
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mt-4">
-                  {/* Price */}
                   <p className="font-bold text-gray-800">
                     {b.status === "confirmed"
                       ? `$${convertToUSD(b.totalPrice)}`
@@ -130,7 +120,7 @@ const BookingHistory = () => {
                       : ""}
                   </p>
 
-                  {/* Cancel button */}
+                  {/* Confirmed booking cancel button */}
                   {b.status === "confirmed" && (
                     <button
                       onClick={async () => {
