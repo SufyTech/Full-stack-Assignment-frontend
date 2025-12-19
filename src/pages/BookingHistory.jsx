@@ -19,17 +19,13 @@ const BookingHistory = () => {
   };
 
   const fetchBookings = async () => {
-    if (!userName) {
-      setError("No userName provided");
-      setLoading(false);
-      return;
-    }
-
     try {
+      setLoading(true);
       const res = await axios.get(`${BASE_URL}/api/bookings/history`, {
         params: { userName },
       });
       setBookings(res.data);
+      setError(null);
     } catch (err) {
       console.error("Booking history error:", err.response || err);
       setError("Failed to fetch bookings");
@@ -39,7 +35,9 @@ const BookingHistory = () => {
   };
 
   useEffect(() => {
-    fetchBookings();
+    if (userName) {
+      fetchBookings();
+    }
   }, [userName]);
 
   if (loading) {

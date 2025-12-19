@@ -1,8 +1,8 @@
 // src/api/api.js
 import axios from "axios";
 
-// Replace this with your backend URL
-const BASE_URL = "http://localhost:5000/api/bookings";
+// Use the live backend URL from environment variables
+const BASE_URL = `${process.env.REACT_APP_API_URL}/api/bookings`;
 
 /**
  * Create a new booking
