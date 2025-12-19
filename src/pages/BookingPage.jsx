@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useBooking } from "../context/BookingContext";
 import axios from "axios";
 
@@ -7,10 +8,14 @@ const BASE_URL = "https://court-backend-5ifj.onrender.com";
 
 const BookingPage = () => {
   const { booking, setBooking } = useBooking();
+  const navigate = useNavigate();
+
   const [courts, setCourts] = useState([]);
   const [equipmentList, setEquipmentList] = useState([]);
   const [coaches, setCoaches] = useState([]);
   const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch courts, equipment, coaches
   useEffect(() => {
@@ -33,18 +38,22 @@ const BookingPage = () => {
 
   const handleConfirmBooking = async () => {
     if (!booking.userName) {
+      setIsSuccess(false);
       setMessage("❌ Please enter your name");
       return;
     }
 
     if (!booking.date || !booking.slot || !booking.courtId) {
+      setIsSuccess(false);
       setMessage("❌ Please select Date, Slot, and Court!");
       return;
     }
 
     try {
-      const res = await axios.post(`${BASE_URL}/api/bookings`, {
-        userName: booking.userName, // ✅ REAL username
+      setIsSubmitting(true);
+
+      await axios.post(`${BASE_URL}/api/bookings`, {
+        userName: booking.userName,
         courtId: booking.courtId,
         date: booking.date,
         slot: booking.slot,
@@ -52,9 +61,29 @@ const BookingPage = () => {
         coachId: booking.coachId || null,
       });
 
-      setMessage(res.data.message);
+      // ✅ SUCCESS
+      setIsSuccess(true);
+      setMessage("🎉 Booking Confirmed Successfully!");
+
+      // 🔄 RESET FORM (keep username)
+      setBooking((prev) => ({
+        userName: prev.userName,
+        courtId: null,
+        date: null,
+        slot: null,
+        equipmentIds: [],
+        coachId: null,
+      }));
+
+      // ⏳ Redirect to booking history
+      setTimeout(() => {
+        navigate("/history");
+      }, 2000);
     } catch (err) {
-      setMessage("❌ Error: " + (err.response?.data?.message || err.message));
+      setIsSuccess(false);
+      setMessage("❌ " + (err.response?.data?.message || err.message));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -65,7 +94,7 @@ const BookingPage = () => {
           Sports Court Booking
         </h1>
 
-        {/* ✅ USER NAME INPUT (CRITICAL FIX) */}
+        {/* USER NAME */}
         <input
           type="text"
           placeholder="Enter your name"
@@ -188,15 +217,26 @@ const BookingPage = () => {
           </div>
         </div>
 
+        {/* CONFIRM BUTTON */}
         <button
           onClick={handleConfirmBooking}
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl"
+          disabled={isSubmitting || isSuccess}
+          className={`mt-6 w-full font-bold py-3 rounded-xl transition ${
+            isSuccess
+              ? "bg-green-500 cursor-not-allowed text-white"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
         >
-          Confirm Booking
+          {isSuccess ? "Booking Confirmed ✔" : "Confirm Booking"}
         </button>
 
+        {/* MESSAGE */}
         {message && (
-          <p className="mt-4 text-center font-semibold text-red-500">
+          <p
+            className={`mt-4 text-center font-semibold ${
+              isSuccess ? "text-green-600" : "text-red-500"
+            }`}
+          >
             {message}
           </p>
         )}
