@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useBooking } from "../context/BookingContext";
 import axios from "axios";
 
-// Use your live backend URL
+// Live backend URL
 const BASE_URL = "https://court-backend-5ifj.onrender.com";
 
 const BookingPage = () => {
@@ -12,7 +12,7 @@ const BookingPage = () => {
   const [coaches, setCoaches] = useState([]);
   const [message, setMessage] = useState("");
 
-  // Fetch courts, equipment, and coaches from backend
+  // Fetch courts, equipment, coaches
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,6 +32,11 @@ const BookingPage = () => {
   }, []);
 
   const handleConfirmBooking = async () => {
+    if (!booking.userName) {
+      setMessage("❌ Please enter your name");
+      return;
+    }
+
     if (!booking.date || !booking.slot || !booking.courtId) {
       setMessage("❌ Please select Date, Slot, and Court!");
       return;
@@ -39,7 +44,7 @@ const BookingPage = () => {
 
     try {
       const res = await axios.post(`${BASE_URL}/api/bookings`, {
-        userName: booking.userName || "Guest",
+        userName: booking.userName, // ✅ REAL username
         courtId: booking.courtId,
         date: booking.date,
         slot: booking.slot,
@@ -60,8 +65,22 @@ const BookingPage = () => {
           Sports Court Booking
         </h1>
 
-        {/* Select Date and Slot */}
+        {/* ✅ USER NAME INPUT (CRITICAL FIX) */}
+        <input
+          type="text"
+          placeholder="Enter your name"
+          value={booking.userName || ""}
+          onChange={(e) =>
+            setBooking((prev) => ({
+              ...prev,
+              userName: e.target.value,
+            }))
+          }
+          className="w-full p-2 border rounded-md mb-6"
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Date & Slot */}
           <div>
             <input
               type="date"
@@ -71,6 +90,7 @@ const BookingPage = () => {
               }
               className="w-full p-2 border rounded-md mb-4"
             />
+
             <select
               value={booking.slot || ""}
               onChange={(e) =>
@@ -168,7 +188,6 @@ const BookingPage = () => {
           </div>
         </div>
 
-        {/* Confirm Button */}
         <button
           onClick={handleConfirmBooking}
           className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl"
